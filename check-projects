@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -x
+
+TARGET=$1
+
+
+mkdir -p reports/
+
+# 1. Check all package.json files in path for signs of compromise
+# 2. Check all folders for signs of compromise
+
+bash ./bin/detector-pkg-json-checker.bash $TARGET >> reports/infected-folders-grep.txt
+bash ./bin/detector-pkg-json-jq-checker.bash $TARGET >> reports/infected-folders-jq.txt
+
+
+
+mkdir -p downloads/metadata
+mkdir -p downloads/pkgs
+
+# Dump all dependencies & versions from all package.jsons
+find $TARGET -type f -name "package.json" -exec ./bin/pkg-version-jq-dumper-filtered.bash "{}" \; >> reports/every-pkg-depend.txt
+find $TARGET -type f -name "package-lock.json" -exec ./bin/pkg-lock-version-jq-dumper-filtered.bash "{}" \; >> reports/every-pkg-lock-depend.txt
+
+# Dedup dependencies with versions
+sort -u reports/every-pkg-depend.txt reports/every-pkg-lock-depend.txt | awk 'NF==2'  > reports/unique-depend.txt
+
+
+# Dedup all package names
+# Download all package metadata by name
+# Make list of tarballs to download
+# Dedup tarballs
+# Download tarballs
+# Check tarballs
+
+
