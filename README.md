@@ -1,4 +1,6 @@
-# second-bummer-detect
+# walk-without-rhythm
+
+<i>"And you won't attract the worm"</i>
 
 Bash scripts which can detect signs of the sha1hulud-2025-11-24 NPM/Github supply chain attack.
 
@@ -11,7 +13,26 @@ Bash scripts which can detect signs of the sha1hulud-2025-11-24 NPM/Github suppl
 
 ## How to use
 
-This is extremely expiremental so I'll update with clear insructions after a bit more testing.
+This is extremely expiremental so there's likely false postivies. If the attacker adapts this repo may produce false negatives. Besure to read the issues and report bugs.
+
+
+
+### `./check-projects <path-to-projects>`
+
+```bash
+./check-projects <path-to-projects>
+```
+
+First pass is super simple and just looks for the file names & package.json signature for signs of infection. If the first pass finds something sketchy it stops and repors where:
+
+
+<img width="689" height="277" alt="Screenshot From 2025-11-24 23-39-35" src="https://github.com/user-attachments/assets/e4a6b3ae-af36-42b7-8c5a-bd7abf27b323" />
+
+It also compiles a full listing of all direct dev & production nodejs dependencies by name and name+version. So you can then do additional checks on these packages.
+
+<img width="681" height="453" alt="Screenshot From 2025-11-24 23-41-47" src="https://github.com/user-attachments/assets/45cf38bd-78f6-4fc1-9839-73eb9b678e52" />
+
+
 
 
 ## Why?
