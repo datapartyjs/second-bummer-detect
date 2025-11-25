@@ -21,6 +21,10 @@ mkdir -p reports/
 # 1. Check all package.json files in path for signs of compromise
 # 2. Check all folders for signs of compromise
 
+IS_CLEAN=true
+IS_CRITICAL=false
+IS_WARNING=false
+
 bash ./bin/detector-pkg-json-checker.bash $TARGET >> reports/infected-folders-grep.txt
 bash ./bin/detector-pkg-json-jq-checker.bash $TARGET >> reports/infected-folders-jq.txt
 find $TARGET -type f -name "bun_environment.js" | while read filename; do [ $(stat -c%s "$filename" 2>/dev/null) -gt 1048576 ] && echo "$filename"; done >> reports/infected-files.txt
@@ -32,13 +36,14 @@ if [ -s "reports/infected-folders-jq.txt" ] || [ -s "reports/infected-folders-gr
     echo "Suspicious files "
 
     cat reports/infected-folders-grep.txt reports/infected-folders-grep.txt reports/infected-files.txt
-    echo "Press Enter to continue scanning..."
-    read
+    IS_CLEAN=false
+    IS_CRITICAL=true
+    # echo "Press Enter to continue scanning..."
+    # read
 fi
 
 echo "Scanning harder . . . "
 
-#{ [ -s reports/infected-folders-grep.txt ] || [ -s reports/infected-folders-jq.txt ]; } && echo "⚠️🚨Your systems is infected ⚠⚠️🚨" && read
 
 mkdir -p downloads/metadata
 mkdir -p downloads/pkgs
@@ -68,4 +73,22 @@ if [ -s "reports/infected-depends.txt" ]; then
     echo "Suspicious dependencies "
 
     cat reports/infected-depends.txt
+    IS_CLEAN=false
+    IS_WARNING=true 
 fi
+
+
+if $IS_WARNING ; then
+        exit 1
+fi
+
+if $IS_CRITICAL ; then
+        exit 2
+fi
+
+
+if $IS_CLEAN ; then
+	exit 0
+fi
+
+
