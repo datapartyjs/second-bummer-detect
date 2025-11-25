@@ -1,31 +1,16 @@
 #!/bin/bash
 
-#!/bin/bash
+FILE=$1
 
-if [ ! -f "package-lock.json" ]; then
-    echo "package-lock.json not found"
+if [ ! -f "$FILE" ]; then
+    echo "can not find file $FILE. Pass a package-lock.json"
     exit 1
 fi
 
-# 1. recurses through the JSON tree (..)
-# 2. selects objects that have both a "version" and "resolved" field (standard for installed packages)
-# 3. extracts the name from the key (handling the "node_modules/" prefix common in v3 lockfiles)
-# 4. prints unique "Name Version" pairs
-
-#jq -r '
-#  [.. | objects | select(has("version") and has("resolved"))] 
-#  | map({name: (.name // "unknown"), version: .version}) 
-#  | unique 
-#  | .[] 
-#  | "\(.name) \(.version)"
-#' package-lock.json
-
 jq -r '
-  .. 
-  | .dependencies? 
-  | select(.) 
-  | to_entries[] 
-  | select(.value.version) 
-  | "\(.key) \(.value.version)"
-' package-lock.json | sort -u
-
+  .packages // .dependencies | 
+  to_entries[] | 
+  select(.value.version != null) | 
+  select(.value.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+")) |
+  "\(.key | sub("^node_modules/"; "") | sub(".*/node_modules/"; "")) \(.value.version)"
+' $FILE | sort

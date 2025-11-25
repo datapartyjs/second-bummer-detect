@@ -1,0 +1,30 @@
+#!/bin/bash
+
+TARGET=$1
+
+
+mkdir -p reports/
+
+# 1. Check all package.json files in path for signs of compromise
+# 2. Check all folders for signs of compromise
+
+bash ./bin/detector-pkg-json-checker.bash $TARGET >> reports/infected-folders-grep.txt
+bash ./bin/detector-pkg-json-jq-checker.bash $TARGET >> reports/infected-folders-jq.txt
+
+mkdir -p downloads/metadata
+mkdir -p downloads/pkgs
+
+find $TARGET -type f -name "package.json" -print0 | while IFS= read -r -d '' file; do
+  
+done
+
+# Dump all dependencies & versions from all package.jsons
+
+# Dedup all package names
+# Download all package metadata by name
+# Make list of tarballs to download
+# Dedup tarballs
+# Download tarballs
+# Check tarballs
+
+
