@@ -1,0 +1,97 @@
+#!/bin/bash
+
+#set -x
+
+IS_LATEST_SAFE=true
+
+echo "Downloading dependency metadata"
+
+#sleep 2
+
+rm -rf downloads/metadata
+rm -rf downloads/packages
+mkdir -p downloads/metadata
+mkdir -p downloads/packages
+
+rm -rf npm-reports
+mkdir -p npm-reports
+
+SAFE_LIST_PATH=npm-reports/npm-latest-safe.txt
+BAD_LIST_PATH=npm-reports/npm-latest-bad.txt
+WARN_LIST_PATH=npm-reports/npm-latest-warn.txt
+
+# Download all package metadata by name
+
+while read line; do
+
+  rm -rf reports
+
+  if [[ ! -f "downloads/metadata/$line" ]]; then
+
+    #echo "Getting metadata $line"
+
+    # Check if the line contains a slash (has a directory path)
+    if [[ "$line" == *"/"* ]]; then
+      # Extract the directory path and create it
+      dir=$(dirname "$line")
+      mkdir -p "downloads/metadata/$dir"
+    fi
+
+    curl -s -C - -o downloads/metadata/$line https://registry.npmjs.org/$line
+
+#  else
+    #echo "skipping metadata download - $line (metadata already exists)"
+  fi
+
+#  echo "Checking Package: $line"
+
+
+  PACKAGE_JSON=$(cat downloads/metadata/$line)
+  LATEST_VERSION=$(echo "$PACKAGE_JSON" | jq -r '.["dist-tags"].latest')
+  DOWNLOAD_URL=$(echo "$PACKAGE_JSON" | jq -r ".versions[\"$LATEST_VERSION\"].dist.tarball")
+
+#  echo "Latest version: $LATEST_VERSION"
+#  echo "Download URL: $DOWNLOAD_URL"
+
+  PKG_PATH="downloads/packages/$line/$LATEST_VERSION"
+
+
+  #if [[ -f $PKG_TGZ_PATH ]]; then
+
+  mkdir -p $PKG_PATH
+
+#  echo "Downloading $DOWNLOAD_URL to $PKG_PATH"
+
+  curl -s -C - -o $PKG_PATH/pkg.tgz $DOWNLOAD_URL
+
+#  echo "Untarring"
+  tar -xzf $PKG_PATH/pkg.tgz -C $PKG_PATH --no-same-owner --no-same-permissions
+
+
+  # Check for signs of compromise
+  ./check-projects downloads/packages/$line/$LATEST_VERSION > /dev/null
+  VALUE=$?
+
+  #echo $VALUE
+  if [[ $VALUE -eq 0 ]]; then
+    echo "$line $LATEST_VERSION" >> "$SAFE_LIST_PATH"
+  elif [[ $VALUE -eq 1 ]]; then
+   echo "$line $LATEST_VERSION" >> "$WARN_LIST_PATH"
+  else
+    IS_LATEST_SAFE=false
+    echo "$line $LATEST_VERSION" >> "$BAD_LIST_PATH"
+    echo "$line $LATEST_VERSION - STILL COMPROMISED"
+  fi
+
+done < data/infected-pkgs.txt
+
+
+if [[ "$IS_LATEST_SAFE" == true ]]; then
+  echo "No issues found"
+  exit 0
+else
+  COUNT=$(wc -l $BAD_LIST_PATH)
+  echo "Found $COUNT packages STILL compromised!"
+  echo "See $BAD_LIST_PATH for full listing."
+  exit 1
+fi
