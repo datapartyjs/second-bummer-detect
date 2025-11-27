@@ -81,7 +81,6 @@ while read line; do
     echo "$line $LATEST_VERSION" >> "$BAD_LIST_PATH"
     echo "$line $LATEST_VERSION - STILL COMPROMISED"
   fi
-  #fi
 
 done < data/infected-pkgs.txt
 
