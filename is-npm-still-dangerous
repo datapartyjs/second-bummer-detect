@@ -13,6 +13,7 @@ rm -rf downloads/packages
 mkdir -p downloads/metadata
 mkdir -p downloads/packages
 
+rm -rf npm-reports
 mkdir -p npm-reports
 
 SAFE_LIST_PATH=npm-reports/npm-latest-safe.txt
